@@ -1,0 +1,39 @@
+version: "2"
+services:
+  digest:
+    image: "httpd:2.4"
+    environment:
+      - HTTPD_DIGEST_PASS=pass
+      - HTTPD_DIGEST_USER=admin
+      - HTTPD_DIGEST_NAME=private Web
+    volumes:
+      - conf:/usr/local/apache2/conf
+      - web:/usr/local/apache2/htdocs
+    command: >
+      bash -c 'echo -n $$HTTPD_DIGEST_USER:$$HTTPD_DIGEST_NAME:>conf/.htdigest &&
+               echo -n $$HTTPD_DIGEST_USER:$$HTTPD_DIGEST_NAME:$$HTTPD_DIGEST_PASS|md5sum -|cut -f 1 -d " ">>conf/.htdigest
+              '
+
+  apache:
+    image: "httpd:2.4"
+    hostname: mobilework.kddilabs.jp
+    ports:
+      - 8888:8888
+    volumes:
+      - conf:/usr/local/apache2/conf
+      - web:/usr/local/apache2/htdocs
+    depends_on:
+      - digest
+
+volumes:
+  conf:
+    driver_opts:
+      type: none
+      device: $PWD/auth
+      o: bind
+  web:
+    driver_opts:
+      type: none
+      device: $PWD/webroot
+      o: bind
+    
